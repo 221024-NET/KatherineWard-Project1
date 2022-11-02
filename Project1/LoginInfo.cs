@@ -9,7 +9,12 @@ namespace Project1
         public string password = "password";
         Dictionary<string, string> loginInfo = new Dictionary<string, string>();
 
-        public LoginInfo() { }
+        public LoginInfo()
+        {
+            loginInfo.Add("Kate", "Ward");
+            loginInfo.Add("Edel", "Idle");
+        }
+
 
         public void Login()
         {
@@ -46,15 +51,27 @@ namespace Project1
 
         public void Register()
         {
-            Console.WriteLine("Enter a username:");
-            username = Console.ReadLine();
-            Console.WriteLine("Enter a password:");
-            password = Console.ReadLine();
+            while (true)
+            {
+                Console.WriteLine("Register a username:");
+                username = Console.ReadLine();
 
-            loginInfo.Add(username, password);
+                if (loginInfo.ContainsKey(username))
+                {
+                    Console.WriteLine("Username already exists. Please try again.");
+                    continue;
+                }
+                
+                Console.WriteLine("Register a password:");
+                password = Console.ReadLine();
 
-            Console.WriteLine("Successfully registered.");
-            Login();
+                loginInfo.Add(username, password);
+
+                Console.WriteLine("Successfully registered.");
+                Login();
+                break;
+            }
+
         }
     }
 }
