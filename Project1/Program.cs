@@ -1,55 +1,26 @@
 ﻿using System;
 
-public class Project1
+namespace Project1
 {
-    public static string username = "username";
-    public static string password = "password";
-
-    public static void Main()
+    public class Project1
     {
-        Console.WriteLine("Do you have an account?");
-        if (Console.ReadLine().Equals("yes"))
+        public static void Main()
         {
-            Login();
-        }
-        else
-        {
-            Register();
-        }
-    }
+            LoginInfo loginInfo = new LoginInfo();
 
-    public static void Login()
-    {
-        string userTry;
-        string passTry;
-        while (true)
-        {
-            Console.WriteLine("Enter username:");
-            userTry = Console.ReadLine();
-            Console.WriteLine("Enter password:");
-            passTry = Console.ReadLine();
-
-            if (userTry == username && passTry == password)
+            while (true)
             {
-                break;
+                Console.WriteLine("Do you have an account?");
+                if (Console.ReadLine().Equals("yes"))
+                {
+                    loginInfo.Login();
+                }
+                else
+                {
+                    loginInfo.Register();
+                }
             }
-            else
-            {
-                Console.WriteLine("Username or Password were incorrect.");
-                continue;
-            }
+
         }
-        Console.WriteLine("Successfully logged in.");
     }
-
-
-    public static void Register()
-    {
-        Console.WriteLine("Enter a username:");
-        username = Console.ReadLine();
-        Console.WriteLine("Enter a password:");
-        password = Console.ReadLine();
-        Console.WriteLine("Successfully registered.");
-    }
-
 }
