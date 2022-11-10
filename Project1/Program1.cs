@@ -4,7 +4,7 @@ namespace Project1
 {
     public class Project1
     {
-        public static void Main()
+        public void Main1()
         {
             LoginInfo loginInfo = new LoginInfo();
             bool isManager = false;
