@@ -1,4 +1,6 @@
-﻿using System.Security.Principal;
+﻿using Project1.Logic;
+using System.Security.Principal;
+using System.Text;
 
 namespace Project1.IO
 {
@@ -6,7 +8,7 @@ namespace Project1.IO
     {
         public UI() { }
 
-        public int BeginApp()
+        public int WelcomeScreen()
         {
             Console.WriteLine("*-------------* Welcome to the app! *-------------*");
             Console.WriteLine("What would you like to do?\n[1] Login as Employee\n[2] Login as Manager\n[3] Register");
@@ -21,6 +23,19 @@ namespace Project1.IO
                 {
                     return option;
                 }
+            }
+        }
+
+        public void ShowOpenTickets(List<Ticket> tickets)
+        {
+            Console.WriteLine("Open Tickets:\n");
+            foreach (Ticket ticket in tickets)
+            {
+                StringBuilder sb = new StringBuilder();
+                sb.AppendLine($"Ticket Number | {ticket.TicketNum}");
+                sb.AppendLine($"Ticket Amount | {ticket.Amount}");
+                sb.AppendLine($"Ticket Submit | {ticket.}");
+                sb.AppendLine($"Ticket Number | {ticket.TicketNum}");
             }
         }
 

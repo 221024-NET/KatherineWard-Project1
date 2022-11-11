@@ -12,3 +12,5 @@ INSERT INTO Users (Username, Password, Title)
 	('Edel', 'Idle','Employee');
 
 SELECT * FROM Users
+
+DELETE FROM Users WHERE Username = 'Register';

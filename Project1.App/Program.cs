@@ -9,31 +9,13 @@ namespace Project1.App
     {
         static void Main()
         {
-            bool isManager = false;
-            int loginType = 0;
+            MainApp mainApp = new MainApp();
 
             string connectionString = File.ReadAllText(@"/Revature/221024/Project1/ConnectionStrings/Project1ConnectionString.txt");
             IRepository repo = new SqlRepository(connectionString);
 
-            UI ui = new UI();
-            Account account = new Account();
 
-            loginType = ui.BeginApp();
-
-            switch (loginType)
-            {
-                case 1:
-                    account.Login();
-                    isManager = false;
-                    break;
-                case 2:
-                    account.Login();
-                    isManager = true;
-                    break;
-                case 3:
-                    account.Register();
-                    break;
-            }
+            mainApp.MainLogin();
 
         }
     }
