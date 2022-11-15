@@ -9,21 +9,19 @@ namespace Project1.Logic
     public class Ticket
     {
         public int TicketNum { get; set; }
-        public string Amount { get; set; }
+        public int Amount { get; set; }
         public string Description { get; set; }
-        public bool IsPending { get; set; }
         public string Name { get; set; }
         public string ApprovedBy { get; set; }
         public int EmployeeId { get; set; }
 
         public Ticket() { }
 
-        public Ticket(int ticketNum, string amount, string description, bool isPending, string name, string approvedBy, int employeeId)
+        public Ticket(int ticketNum, int amount, string description, string name, string approvedBy, int employeeId)
         {
             TicketNum = ticketNum;
             Amount = amount;
             Description = description;
-            IsPending = isPending;
             Name = name;
             ApprovedBy = approvedBy;
             EmployeeId = employeeId;

@@ -9,13 +9,15 @@ namespace Project1.App
     {
         static void Main()
         {
-            MainApp mainApp = new MainApp();
-
             string connectionString = File.ReadAllText(@"/Revature/221024/Project1/ConnectionStrings/Project1ConnectionString.txt");
-            IRepository repo = new SqlRepository(connectionString);
+            IRepository repo = new SqlRepository();
+            repo.connectionString = connectionString;
+            
+            MainApp mainApp = new MainApp(repo);
 
 
             mainApp.MainLogin();
+            mainApp.MainMenu();
 
         }
     }

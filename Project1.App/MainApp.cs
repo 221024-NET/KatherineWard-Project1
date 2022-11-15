@@ -12,6 +12,8 @@ namespace Project1.App
     public class MainApp
     {
         IRepository _repo;
+        UI ui = new UI();
+        User user;
         bool isManager = false;
         int loginType = 0;
 
@@ -32,23 +34,38 @@ namespace Project1.App
             {
                 case 1:
                     Login();
-                    isManager = false;
                     break;
                 case 2:
-                    Login();
+                    Register();
                     isManager = true;
                     break;
                 case 3:
                     Register();
+                    isManager = true;
                     break;
             }
         }
-
-        public void GetOpenTickets()
+        public void MainMenu()
         {
-            List<Ticket> openTickets = _repo.GetOpenTickets();
+            UI ui = new UI();
 
+            int loginType = ui.MainMenu(user);
 
+            switch (loginType)
+            {
+                case 1: // view pending tickets
+                    GetOpenTickets();
+                    break;
+                case 2: // manage tickets
+
+                    break;
+                case 3: // submit ticket
+
+                    break;
+                case 4: // view previous tickets
+                    GetPreviousTickets();
+                    break;
+            }
         }
 
 
@@ -63,7 +80,9 @@ namespace Project1.App
 
                 if (_repo.GetLogin(username, password))
                 {
+                    user = _repo.GetUser(username);
                     Console.WriteLine("Login successful!");
+                    break;
                 }
                 else
                 {
@@ -78,10 +97,25 @@ namespace Project1.App
         {
             string username;
             string password;
+            string name;
+
+            if (isManager)
+            {
+                Console.WriteLine("Enter manager credentials:");
+                if (Console.ReadLine().ToLower() == "please") isManager = true;
+                else
+                {
+                    Console.WriteLine("Wrong credentials. Returning to Main.");
+                    isManager = false;
+                    MainLogin();
+                    return;
+                }
+            }
+
 
             while (true)
             {
-                Console.WriteLine("Register a username:");
+                Console.WriteLine("/nRegister a username:");
                 username = Console.ReadLine();
 
                 if (_repo.CheckUsername(username))
@@ -116,10 +150,25 @@ namespace Project1.App
 
             }
 
-            if (_repo.Register(username, password, false))
+            Console.WriteLine("Please enter your full name:");
+            name = Console.ReadLine();
+
+            if (_repo.Register(username, password, isManager, name))
             {
+                user = _repo.GetUser(username);
                 Console.WriteLine("Successfully registered!");
             }
+        }
+
+        public void GetOpenTickets()
+        {
+            List<Ticket> openTickets = _repo.GetOpenTickets();
+            ui.ShowOpenTickets(openTickets);
+        }
+        public void GetPreviousTickets()
+        {
+            List<Ticket> pastTickets = _repo.GetPreviousTickets(user.Username);
+            ui.ShowPreviousTickets(pastTickets);
         }
     }
 }

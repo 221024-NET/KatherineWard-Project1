@@ -63,10 +63,22 @@ INSERT INTO Project1.Tickets (Amount, Description, EmployeeId)
 VALUES
 	(35, 'For fun', 2);
 
+INSERT INTO Project1.Tickets (Amount, Description, EmployeeId)
+VALUES
+	(150, 'Help me embezzle this', 11);
+
+INSERT INTO Project1.Tickets (Amount, Description, EmployeeId, ApprovedBy)
+VALUES
+	(25, 'Summit Parking', 2, 'Katherine Ward');
+
 --------------------------
-	SELECT TicketNum, Amount, Description, isPending, Name, ApprovedBy FROM Project1.Tickets
+	SELECT TicketNum, Amount, Description, isPending, Name FROM Project1.Tickets
 	JOIN Project1.Users ON EmployeeId = UserId
 	WHERE ApprovedBy IS NULL
+--------------------------
+	SELECT TicketNum, Amount, Description, isPending, Name FROM Project1.Tickets
+	JOIN Project1.Users ON EmployeeId = UserId
+	WHERE ApprovedBy IS NOT NULL AND Project1.Users.Username = 'Edel';
 --------------------------
 
 ALTER TABLE  Project1.Users
