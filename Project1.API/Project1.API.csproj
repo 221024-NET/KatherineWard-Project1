@@ -17,4 +17,10 @@
     <ProjectReference Include="..\Project1.Logic\Project1.Logic.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="Project1.Logic">
+      <HintPath>..\Project1.Logic\bin\Debug\net6.0\Project1.Logic.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
 </Project>

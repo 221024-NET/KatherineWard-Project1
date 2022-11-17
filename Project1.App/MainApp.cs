@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace Project1.App
 {
@@ -57,7 +58,7 @@ namespace Project1.App
                     GetOpenTickets();
                     break;
                 case 2: // manage tickets
-
+                    ManageTickets();
                     break;
                 case 3: // submit ticket
 
@@ -69,7 +70,7 @@ namespace Project1.App
         }
 
 
-        public void Login()
+        public User Login()
         {
             while (true)
             {
@@ -78,11 +79,11 @@ namespace Project1.App
                 Console.WriteLine("Enter your password:");
                 string password = Console.ReadLine();
 
-                if (_repo.GetLogin(username, password))
+                if (_repo.CheckLogin(username, password))
                 {
                     user = _repo.GetUser(username);
                     Console.WriteLine("Login successful!");
-                    break;
+                    return user;
                 }
                 else
                 {
@@ -153,11 +154,23 @@ namespace Project1.App
             Console.WriteLine("Please enter your full name:");
             name = Console.ReadLine();
 
-            if (_repo.Register(username, password, isManager, name))
+            if (isManager)
             {
-                user = _repo.GetUser(username);
-                Console.WriteLine("Successfully registered!");
+                if (_repo.ManagerRegister(username, password, name))
+                {
+                    user = _repo.GetUser(username);
+                    Console.WriteLine("Successfully registered!");
+                }
             }
+            else
+            {
+                if (_repo.EmployeeRegister(username, password, name))
+                {
+                    user = _repo.GetUser(username);
+                    Console.WriteLine("Successfully registered!");
+                }
+            }
+
         }
 
         public void GetOpenTickets()
@@ -167,8 +180,32 @@ namespace Project1.App
         }
         public void GetPreviousTickets()
         {
-            List<Ticket> pastTickets = _repo.GetPreviousTickets(user.Username);
+            List<Ticket> pastTickets = _repo.GetPreviousTickets(user.EmployeeId);
             ui.ShowPreviousTickets(pastTickets);
+        }
+        public void ManageTickets()
+        {
+            List<Ticket> openTickets = _repo.GetOpenTickets();
+            ui.ShowPreviousTickets(openTickets);
+            int ticketNum;
+            int statusCheck;
+
+            Console.WriteLine("Which ticket would you like to manage? (Enter ID):");
+            Int32.TryParse(Console.ReadLine(), out ticketNum);
+
+            Console.WriteLine($"What would you like to do?\n[1] Approve\n[2] Deny");
+            Int32.TryParse(Console.ReadLine(), out statusCheck);
+
+            Ticket ticket = _repo.ManageTicket(ticketNum, statusCheck);
+
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine($"Ticket Number | {ticket.TicketNum}");
+            sb.AppendLine($"Submitted by  | {ticket.Name}");  ////// employee name
+            sb.AppendLine($"Amount        | ${ticket.Amount}");
+            sb.AppendLine($"Description   | {ticket.Description}");
+            sb.AppendLine($"Status        | {ticket.Status}\n");
+        
+            Console.WriteLine(sb.ToString());
         }
     }
 }

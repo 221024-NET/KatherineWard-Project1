@@ -8,8 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Project1.Data\Project1.Data.csproj" />
-    <ProjectReference Include="..\Project1.IO\Project1.IO.csproj" />
+    <PackageReference Include="Microsoft.AspNet.WebApi.Client" Version="5.2.9" />
   </ItemGroup>
 
 </Project>

@@ -1,6 +1,6 @@
-﻿using Project1.Logic;
-using System.Security.Principal;
+﻿using System.Security.Principal;
 using System.Text;
+using Project1.Logic;
 
 namespace Project1.IO
 {
@@ -73,7 +73,7 @@ namespace Project1.IO
                 sb.AppendLine($"Ticket Number | {ticket.TicketNum}");
                 sb.AppendLine($"Submitted by  | {ticket.Name}");  ////// employee name
                 sb.AppendLine($"Amount        | ${ticket.Amount}");
-                sb.AppendLine($"Description   | {ticket.Description}");
+                sb.AppendLine($"Description   | {ticket.Description}\n");
             }
             Console.WriteLine(sb.ToString());
         }
@@ -87,7 +87,7 @@ namespace Project1.IO
                 sb.AppendLine($"Ticket Number | {ticket.TicketNum}");
                 sb.AppendLine($"Amount        | ${ticket.Amount}");
                 sb.AppendLine($"Description   | {ticket.Description}");
-                sb.AppendLine($"Approved by   | {ticket.ApprovedBy}");  ////// employee name
+                sb.AppendLine($"Status        | {ticket.Status}\n");  ////// employee name
             }
             Console.WriteLine(sb.ToString());
         }

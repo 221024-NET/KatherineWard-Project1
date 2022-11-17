@@ -12,14 +12,16 @@ namespace Project1.Data
         string connectionString { get; set; }
 
         bool CheckUsername(string username);
-        bool GetLogin(string username, string password);
-        bool Register(string username, string password, bool isManager, string name);
+        bool CheckLogin(string username, string password);
+        bool EmployeeRegister(string username, string password, string name);
+        bool ManagerRegister(string username, string password, string name);
         User GetUser(string username);
 
         List<Ticket> GetOpenTickets();
-        List<Ticket> GetPreviousTickets(string username);
+        List<Ticket> GetPreviousTickets(int employeeId);
 
-        //bool NewTicket(Ticket newTicket);
+        Ticket NewTicket(Ticket newTicket, int employeeId);
+        Ticket ManageTicket(int ticketId, int status);
 
     }
 }

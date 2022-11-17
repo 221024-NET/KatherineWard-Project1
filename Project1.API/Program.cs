@@ -1,5 +1,6 @@
 using Project1.App;
 using Project1.Data;
+using Project1.Logic;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,20 +36,75 @@ app.MapGet("/user", (string username, SqlRepository repo) =>
     return user;
 });
 
-app.MapGet("/open-tickets", (SqlRepository repo) =>
+app.MapPost("/login", (User user, SqlRepository repo) =>
+{
+    repo.connectionString = connectionString;
+    if(repo.CheckLogin(user.Username, user.Password))
+    {
+        var loginUser = repo.GetUser(user.Username);
+        return loginUser;
+    }
+    else
+    {
+        return null;
+    }
+});
+
+app.MapPost("/registeremployee", (string username, string password, string name, SqlRepository repo) =>
+{
+    repo.connectionString = connectionString;
+    if (repo.EmployeeRegister(username, password, name))
+    {
+        var user = repo.GetUser(username);
+        return Results.Created($"/user/{user.EmployeeId}", user);
+    }
+    else
+    {
+        return null;
+    }
+});
+
+app.MapPost("/registermanager", (string username, string password, string name, SqlRepository repo) =>
+{
+    repo.connectionString = connectionString;
+    if (repo.ManagerRegister(username, password, name))
+    {
+        var user = repo.GetUser(username);
+        return Results.Created($"/user/{user.EmployeeId}", user);
+    }
+    else
+    {
+        return null;
+    }
+});
+
+app.MapGet("/tickets", (SqlRepository repo) =>
 {
     repo.connectionString = connectionString;
     var tickets = repo.GetOpenTickets();
     return tickets;
 });
 
-app.MapGet("/ticket-history", (string username, SqlRepository repo) =>
+app.MapGet("/tickets/{id}", (int id, SqlRepository repo) =>
 {
     repo.connectionString = connectionString;
-    var tickets = repo.GetPreviousTickets(username);
+    var tickets = repo.GetPreviousTickets(id);
     return tickets;
 });
 
+app.MapPost("/tickets/{employeeId}", (int employeeId, Ticket newTicket, SqlRepository repo) =>
+{
+    repo.connectionString = connectionString;
+    var ticket = repo.NewTicket(newTicket, employeeId);
+    return ticket;
+});
+
+app.MapPut("/tickets/{id}", (int id, Ticket updatedTicket, SqlRepository repo) =>
+{
+    repo.connectionString = connectionString;
+    var ticket = repo.ManageTicket(id, (updatedTicket.Status == "Approved" ? 1 : 2));
+    return ticket;
+});
 
 
 app.Run();

@@ -86,3 +86,12 @@ ADD Name VARCHAR(MAX)
 
 UPDATE Project1.Users SET Name = 'Chaundra Ward'
 WHERE UserName = 'Chaundra';
+
+ALTER TABLE Project1.Tickets
+ALTER COLUMN ApprovedBy VARCHAR(255) NOT NULL DEFAULT = 'Pending';
+
+UPDATE Project1.Tickets SET ApprovedBy = 'Approved'
+WHERE TicketNum = 3;
+
+ALTER TABLE Project1.Tickets
+ADD DEFAULT 'Pending' FOR ApprovedBy;

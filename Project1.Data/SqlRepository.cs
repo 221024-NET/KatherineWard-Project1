@@ -1,5 +1,6 @@
 ﻿using Project1.Logic;
 using System.Data.SqlClient;
+using System.Reflection.PortableExecutable;
 
 namespace Project1.Data
 {
@@ -32,7 +33,7 @@ namespace Project1.Data
             return false; //Username is free
         }
         
-        public bool GetLogin(string username, string password)
+        public bool CheckLogin(string username, string password)
         {
             using SqlConnection connection = new SqlConnection(connectionString);
             connection.Open();
@@ -57,39 +58,88 @@ namespace Project1.Data
             return false; // Could not log in
         }
 
-        public bool Register(string username, string password, bool isManager, string name)
+        public bool EmployeeRegister(string username, string password, string name)
         {
-            using SqlConnection connection = new SqlConnection(connectionString);
-            connection.Open();
-
-            string cmdText = "INSERT INTO Project1.Users (Username, Password, isManager, Name) " +
-                                "VALUES (@username, @password, @isManager, @name);";
-
-            using SqlCommand cmd = new(cmdText, connection);
-            cmd.Parameters.AddWithValue("@username", username);
-            cmd.Parameters.AddWithValue("@password", password);
-            cmd.Parameters.AddWithValue("@isManager", (isManager ? 1 : 0));
-            cmd.Parameters.AddWithValue("@name", name);
-
-            cmd.ExecuteNonQuery();
-
-            string cmdText2 = "SELECT Username, Password FROM Project1.Users";
-
-            using SqlCommand cmd2 = new(cmdText2, connection);
-
-            using SqlDataReader reader = cmd2.ExecuteReader();
-
-            string userAuth, passAuth = "";
-
-            while (reader.Read())
-            { 
-                userAuth = reader.GetString(0); 
-                passAuth = reader.GetString(1);
-                if (username.Equals(userAuth) && password.Equals(passAuth)) return true;
+            if (CheckUsername(username))
+            {
+                return false;
             }
+            else
+            {
+                using SqlConnection connection = new SqlConnection(connectionString);
+                connection.Open();
 
-            connection.Close();
-            return false;
+                string cmdText = "INSERT INTO Project1.Users (Username, Password, isManager, Name) " +
+                                    "VALUES (@username, @password, @isManager, @name);";
+
+                using SqlCommand cmd = new(cmdText, connection);
+                cmd.Parameters.AddWithValue("@username", username);
+                cmd.Parameters.AddWithValue("@password", password);
+                cmd.Parameters.AddWithValue("@isManager", 0);
+                cmd.Parameters.AddWithValue("@name", name);
+
+                cmd.ExecuteNonQuery();
+
+                string cmdText2 = "SELECT Username, Password FROM Project1.Users";
+
+                using SqlCommand cmd2 = new(cmdText2, connection);
+
+                using SqlDataReader reader = cmd2.ExecuteReader();
+
+                string userAuth, passAuth = "";
+
+                while (reader.Read())
+                { 
+                    userAuth = reader.GetString(0); 
+                    passAuth = reader.GetString(1);
+                    if (username.Equals(userAuth) && password.Equals(passAuth)) return true;
+                }
+
+                connection.Close();
+                return false;
+            }
+        }
+
+        public bool ManagerRegister(string username, string password, string name)
+        {
+            if (CheckUsername(username))
+            {
+                return false;
+            }
+            else
+            {
+                using SqlConnection connection = new SqlConnection(connectionString);
+                connection.Open();
+
+                string cmdText = "INSERT INTO Project1.Users (Username, Password, isManager, Name) " +
+                                    "VALUES (@username, @password, @isManager, @name);";
+
+                using SqlCommand cmd = new(cmdText, connection);
+                cmd.Parameters.AddWithValue("@username", username);
+                cmd.Parameters.AddWithValue("@password", password);
+                cmd.Parameters.AddWithValue("@isManager", 1);
+                cmd.Parameters.AddWithValue("@name", name);
+
+                cmd.ExecuteNonQuery();
+
+                string cmdText2 = "SELECT Username, Password FROM Project1.Users";
+
+                using SqlCommand cmd2 = new(cmdText2, connection);
+
+                using SqlDataReader reader = cmd2.ExecuteReader();
+
+                string userAuth, passAuth = "";
+
+                while (reader.Read())
+                { 
+                    userAuth = reader.GetString(0); 
+                    passAuth = reader.GetString(1);
+                    if (username.Equals(userAuth) && password.Equals(passAuth)) return true;
+                }
+
+                connection.Close();
+                return false;
+            }
         }
 
         public User GetUser(string username)
@@ -109,8 +159,6 @@ namespace Project1.Data
 
             while (reader.Read())
             {
-                // User(int employeeId, bool isManager, string name)
-                //user = new User(reader.GetInt32(0), reader.GetBoolean(1), reader.GetString(2));
                 user.EmployeeId = reader.GetInt32(0);
                 user.IsManager = reader.GetBoolean(1);
                 user.Name = reader.GetString(2);
@@ -133,7 +181,7 @@ namespace Project1.Data
             //Ticket(int ticketNum, int amount, string description, string name, string approvedBy, int employeeId)
             string cmdText = "SELECT TicketNum, Amount, Description, Name, ApprovedBy, EmployeeId FROM Project1.Tickets " +
                                 "JOIN Project1.Users ON EmployeeId = UserId " +
-                                "WHERE ApprovedBy IS NULL";
+                                "WHERE ApprovedBy = 'Pending'";
 
             using SqlCommand cmd = new(cmdText, connection);
 
@@ -141,11 +189,12 @@ namespace Project1.Data
 
             while (reader.Read())
             {                   //Ticket(int ticketNum, int amount, string description, string name, string approvedBy, int employeeId)
-                tickets.Add(new Ticket(reader.GetInt32(0),
+                tickets.Add(new Ticket(
+                    reader.GetInt32(0),
                     reader.GetInt32(1),
                     reader.GetString(2),
                     reader.GetString(3),
-                    "Pending",
+                    reader.GetString(4),
                     reader.GetInt32(5)));
             }
 
@@ -155,7 +204,7 @@ namespace Project1.Data
             else return null;
         }
 
-        public List<Ticket> GetPreviousTickets(string username)
+        public List<Ticket> GetPreviousTickets(int employeeId)
         {
             List<Ticket> tickets = new List<Ticket>();
 
@@ -165,20 +214,20 @@ namespace Project1.Data
             //Ticket(int ticketNum, int amount, string description, string name, string approvedBy, int employeeId)
             string cmdText = "SELECT TicketNum, Amount, Description, Name, ApprovedBy, EmployeeId FROM Project1.Tickets " +
                                 "JOIN Project1.Users ON EmployeeId = UserId " +
-                                "WHERE Project1.Users.Username = @username";
+                                "WHERE Project1.Users.UserId = @employeeId";
 
             using SqlCommand cmd = new(cmdText, connection);
-            cmd.Parameters.AddWithValue("@username", username);
+            cmd.Parameters.AddWithValue("@employeeId", employeeId);
 
             using SqlDataReader reader = cmd.ExecuteReader();
 
             while (reader.Read())
-            {                   //Ticket(int ticketNum, int amount, string description, string name, string approvedBy, int employeeId)
+            {                   //Ticket(int ticketNum, int amount, string description, string name, string status, int employeeId)
                 tickets.Add(new Ticket(reader.GetInt32(0),
                     reader.GetInt32(1),
                     reader.GetString(2),
                     reader.GetString(3),
-                    (reader.GetString(4) != null ? reader.GetString(4) : "Pending" ),
+                    reader.GetString(4),
                     reader.GetInt32(5)));
             }
 
@@ -189,5 +238,91 @@ namespace Project1.Data
         }
 
 
+        public Ticket NewTicket(Ticket newTicket, int employeeId)
+        {
+            using SqlConnection connection = new SqlConnection(connectionString);
+            connection.Open();
+
+            string cmdText = "INSERT INTO Project1.Tickets (Amount, Description, EmployeeId) " +
+                "VALUES " +
+                "(@amount, @description, @employeeId); " +
+                "SELECT @@IDENTITY;";
+
+            using SqlCommand cmd = new(cmdText, connection);
+            cmd.Parameters.AddWithValue("@amount", newTicket.Amount);
+            cmd.Parameters.AddWithValue("@description", newTicket.Description);
+            cmd.Parameters.AddWithValue("@employeeId", employeeId);
+
+            using SqlDataReader reader = cmd.ExecuteReader();
+            Ticket currentTicket = new Ticket();
+
+            while (reader.Read())
+            {
+                currentTicket.TicketNum = reader.GetInt32(0);
+            }
+            cmd.Dispose();
+
+            string cmdText2 = "SELECT Amount, Description, EmployeeId, TicketNum, Name, ApprovedBy FROM Project1.Tickets " +
+                "JOIN Project1.Users ON EmployeeId = UserId " +
+                "WHERE TicketNum = @ticketNum";
+
+            using SqlCommand cmd2 = new(cmdText2, connection);
+            cmd2.Parameters.AddWithValue("@ticketNum", currentTicket.TicketNum);
+
+            using SqlDataReader reader2 = cmd2.ExecuteReader();
+
+            while (reader2.Read())
+            {
+                currentTicket.Amount = reader2.GetInt32(0);
+                currentTicket.Description = reader2.GetString(1);
+                currentTicket.EmployeeId = reader2.GetInt32(2);
+                currentTicket.TicketNum = reader2.GetInt32(3);
+                currentTicket.Name = reader2.GetString(4);
+                currentTicket.Status = reader.GetString(5);
+                return currentTicket;
+            }
+
+            return null;
+        }
+        public Ticket ManageTicket(int ticketId, int status) // 1 = "Approved", 2 = "Denied"
+        {
+            using SqlConnection connection = new SqlConnection(connectionString);
+            connection.Open();
+
+            string cmdText = "UPDATE Project1.Tickets SET ApprovedBy = @status " +
+                "WHERE TicketNum = @ticketId;";
+
+            using SqlCommand cmd = new(cmdText, connection);
+            cmd.Parameters.AddWithValue("@status", (status == 1 ? "Approved" : "Denied"));
+            cmd.Parameters.AddWithValue("@ticketId", ticketId);
+
+            cmd.ExecuteNonQuery();
+
+            cmd.Dispose();
+
+            string cmdText2 = "SELECT Amount, Description, EmployeeId, TicketNum, Name, ApprovedBy FROM Project1.Tickets " +
+                "JOIN Project1.Users ON EmployeeId = UserId " +
+                "WHERE TicketNum = @ticketNum";
+
+            Ticket ticketStatus = new Ticket();
+
+            using SqlCommand cmd2 = new(cmdText2, connection);
+            cmd2.Parameters.AddWithValue("@ticketNum", ticketId);
+
+            using SqlDataReader reader = cmd2.ExecuteReader();
+
+            while (reader.Read())
+            {
+                ticketStatus.Amount = reader.GetInt32(0);
+                ticketStatus.Description = reader.GetString(1);
+                ticketStatus.EmployeeId = reader.GetInt32(2);
+                ticketStatus.TicketNum = reader.GetInt32(3);
+                ticketStatus.Name = reader.GetString(4);
+                ticketStatus.Status = reader.GetString(5);
+                return ticketStatus;
+            }
+
+            return null;
+        }
     }
 }
