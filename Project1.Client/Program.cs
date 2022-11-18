@@ -22,9 +22,10 @@ namespace Project1.Client
             client.DefaultRequestHeaders.Accept.Clear();
             client.DefaultRequestHeaders.Accept.Add(
                 new MediaTypeWithQualityHeaderValue("application/json"));
-
             User user;
-// Initial Login
+
+#region Initial Login
+
             Console.WriteLine("*-------------* Welcome to the app! *-------------*");
             Console.WriteLine("What would you like to do?\n[1] Login as Employee\n[2] Register as Employee\n[3] Register as Manager");
             int option;
@@ -56,8 +57,12 @@ namespace Project1.Client
                     break;
                 }
             }
-// Ticket Menu
+            #endregion
+
+            Console.Clear();
             Console.WriteLine($"\n*-------------* Welcome {user.Name} *-------------*");
+
+#region Manager Ticket Menu
 
             if (user.IsManager)
             {
@@ -73,20 +78,16 @@ namespace Project1.Client
                         var pendingTickets = await ShowPendingTickets();
 
                         Console.WriteLine($"\nOpen Tickets: {pendingTickets.Count}\n");
-                        foreach (Ticket ticket in pendingTickets)
-                        {
-                            Console.WriteLine($"Ticket Number | {ticket.TicketNum}");
-                            Console.WriteLine($"Submitted by  | {ticket.Name}");
-                            Console.WriteLine($"Amount        | ${ticket.Amount}");
-                            Console.WriteLine($"Description   | {ticket.Description}");
-                            Console.WriteLine($"Status        | {ticket.Status}\n");
-                        }
+                        ListTickets(pendingTickets);
                     }
                     else if (option == 2)
                     {
+                        var pendingTickets = await ShowPendingTickets();
+
+                        Console.WriteLine($"\nOpen Tickets: {pendingTickets.Count}\n");
+                        ListTickets(pendingTickets);
+
                         Ticket ticket = await UpdateTicket();
-
-
 
                         StringBuilder sb = new StringBuilder();
                         sb.AppendLine($"Ticket Number | {ticket.TicketNum}");
@@ -95,10 +96,15 @@ namespace Project1.Client
                         sb.AppendLine($"Description   | {ticket.Description}");
                         sb.AppendLine($"Status        | {ticket.Status}\n");
 
+                        Console.WriteLine("Updated Ticket:\n");
                         Console.WriteLine(sb.ToString());
                     }
                 }
             }
+            #endregion
+
+#region Employee Ticket Menu
+
             else
             {
                 while (true)
@@ -117,17 +123,11 @@ namespace Project1.Client
                         var previousTickets = await ShowPreviousTickets(user.EmployeeId);
 
                         Console.WriteLine($"\nYour Tickets: {previousTickets.Count}\n");
-                        foreach (Ticket ticket in previousTickets)
-                        {
-                            Console.WriteLine($"Ticket Number | {ticket.TicketNum}");
-                            Console.WriteLine($"Submitted by  | {ticket.Name}");
-                            Console.WriteLine($"Amount        | ${ticket.Amount}");
-                            Console.WriteLine($"Description   | {ticket.Description}");
-                            Console.WriteLine($"Status        | {ticket.Status}\n");
-                        }
+                        ListTickets(previousTickets);
                     }
                 }
             }
+#endregion
         }
 
         static async Task<User> GetUser(string username)
@@ -144,13 +144,13 @@ namespace Project1.Client
             }
         }
 
-        static async Task<User> GetTicket(int ticketNum)
+        static async Task<Ticket> GetTicket(int ticketNum)
         {
-            HttpResponseMessage response = await client.GetAsync($"");
+            HttpResponseMessage response = await client.GetAsync($"tickets/{ticketNum}");
 
             if (response.IsSuccessStatusCode)
             {
-                return await response.Content.ReadAsAsync<User>();
+                return await response.Content.ReadAsAsync<Ticket>();
             }
             else
             {
@@ -206,7 +206,7 @@ namespace Project1.Client
         {
             Ticket addedTicket = new Ticket();
             HttpResponseMessage response = await client.PostAsJsonAsync(
-                $"tickets/open/{newTicket.EmployeeId}", newTicket);
+                $"tickets/{newTicket.EmployeeId}", newTicket);
 
             if (response.IsSuccessStatusCode)
             {
@@ -219,7 +219,7 @@ namespace Project1.Client
         static async Task<Ticket> ManageTickets(Ticket updatedTicket)
         {
             HttpResponseMessage response = await client.PostAsJsonAsync(
-                "tickets/open", updatedTicket);                        //////// get proper parameters
+                $"tickets/{updatedTicket.TicketNum}", updatedTicket);
 
             if (response.IsSuccessStatusCode)
             {
@@ -281,7 +281,7 @@ namespace Project1.Client
 
                 user = await GetUser(username);
 
-                if (user == null)
+                if (user.Username == null)
                 {
                     Console.WriteLine("Enter a password:");
                     password = Console.ReadLine();
@@ -306,7 +306,7 @@ namespace Project1.Client
         {
             Ticket ticket = new Ticket();
 
-            Console.WriteLine("Enter"
+            Console.WriteLine("Enter");
 
             return ticket;
         }
@@ -316,13 +316,43 @@ namespace Project1.Client
             int ticketNum;
             int statusCheck;
 
-            Console.WriteLine("Which ticket would you like to manage? (Enter ID):");
+            Console.WriteLine("\nWhich ticket would you like to manage? (Enter ID):");
             Int32.TryParse(Console.ReadLine(), out ticketNum);
+            Ticket ticketToUpdate = await GetTicket(ticketNum);
 
-            Console.WriteLine($"What would you like to do?\n[1] Approve\n[2] Deny");
-            Int32.TryParse(Console.ReadLine(), out statusCheck);
 
-            ManageTickets()
+            while (true)
+            {
+                Console.WriteLine($"What would you like to do?\n[1] Approve\n[2] Deny");
+
+                if (Int32.TryParse(Console.ReadLine(), out statusCheck) || statusCheck < 1 || statusCheck > 2)
+                {
+                    Console.WriteLine("Please enter '1' or '2'.");
+                    continue;
+                }
+                else if (statusCheck == 1)
+                {
+                    ticketToUpdate.Status = "Approved";
+                }
+                else if (statusCheck == 2)
+                {
+                    ticketToUpdate.Status = "Denied";
+                }
+            }
+
+            ManageTickets(ticketToUpdate);
+        }
+
+        static void ListTickets(List<Ticket> ticketList)
+        {
+            foreach (Ticket ticket in ticketList)
+            {
+                Console.WriteLine($"Ticket Number | {ticket.TicketNum}");
+                Console.WriteLine($"Submitted by  | {ticket.Name}");
+                Console.WriteLine($"Amount        | ${ticket.Amount}");
+                Console.WriteLine($"Description   | {ticket.Description}");
+                Console.WriteLine($"Status        | {ticket.Status}\n");
+            }
         }
     }
 }

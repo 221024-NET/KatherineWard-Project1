@@ -253,13 +253,7 @@ namespace Project1.Data
             cmd.Parameters.AddWithValue("@description", newTicket.Description);
             cmd.Parameters.AddWithValue("@employeeId", employeeId);
 
-            using SqlDataReader reader = cmd.ExecuteReader();
-            Ticket currentTicket = new Ticket();
-
-            while (reader.Read())
-            {
-                currentTicket.TicketNum = reader.GetInt32(0);
-            }
+            int ticketNum = Convert.ToInt32(cmd.ExecuteScalar());
             cmd.Dispose();
 
             string cmdText2 = "SELECT Amount, Description, EmployeeId, TicketNum, Name, ApprovedBy FROM Project1.Tickets " +
@@ -267,17 +261,18 @@ namespace Project1.Data
                 "WHERE TicketNum = @ticketNum";
 
             using SqlCommand cmd2 = new(cmdText2, connection);
-            cmd2.Parameters.AddWithValue("@ticketNum", currentTicket.TicketNum);
+            cmd2.Parameters.AddWithValue("@ticketNum", ticketNum);
 
-            using SqlDataReader reader2 = cmd2.ExecuteReader();
+            using SqlDataReader reader = cmd2.ExecuteReader();
 
-            while (reader2.Read())
+            while (reader.Read())
             {
-                currentTicket.Amount = reader2.GetInt32(0);
-                currentTicket.Description = reader2.GetString(1);
-                currentTicket.EmployeeId = reader2.GetInt32(2);
-                currentTicket.TicketNum = reader2.GetInt32(3);
-                currentTicket.Name = reader2.GetString(4);
+                Ticket currentTicket = new Ticket();
+                currentTicket.Amount = reader.GetInt32(0);
+                currentTicket.Description = reader.GetString(1);
+                currentTicket.EmployeeId = reader.GetInt32(2);
+                currentTicket.TicketNum = reader.GetInt32(3);
+                currentTicket.Name = reader.GetString(4);
                 currentTicket.Status = reader.GetString(5);
                 return currentTicket;
             }

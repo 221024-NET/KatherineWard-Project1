@@ -50,13 +50,13 @@ app.MapPost("/login", (User user, SqlRepository repo) =>
     }
 });
 
-app.MapPost("/registeremployee", (string username, string password, string name, SqlRepository repo) =>
+app.MapPost("/registeremployee", (User user, SqlRepository repo) =>
 {
     repo.connectionString = connectionString;
-    if (repo.EmployeeRegister(username, password, name))
+    if (repo.EmployeeRegister(user.Username, user.Password, user.Name))
     {
-        var user = repo.GetUser(username);
-        return Results.Created($"/user/{user.EmployeeId}", user);
+        var newUser = repo.GetUser(user.Username);
+        return Results.Created($"/user/{newUser.EmployeeId}", newUser);
     }
     else
     {
@@ -64,13 +64,13 @@ app.MapPost("/registeremployee", (string username, string password, string name,
     }
 });
 
-app.MapPost("/registermanager", (string username, string password, string name, SqlRepository repo) =>
+app.MapPost("/registermanager", (User user, SqlRepository repo) =>
 {
     repo.connectionString = connectionString;
-    if (repo.ManagerRegister(username, password, name))
+    if (repo.ManagerRegister(user.Username, user.Password, user.Name))
     {
-        var user = repo.GetUser(username);
-        return Results.Created($"/user/{user.EmployeeId}", user);
+        var newUser = repo.GetUser(user.Username);
+        return Results.Created($"/user/{newUser.EmployeeId}", newUser);
     }
     else
     {
