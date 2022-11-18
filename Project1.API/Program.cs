@@ -85,10 +85,17 @@ app.MapGet("/tickets", (SqlRepository repo) =>
     return tickets;
 });
 
-app.MapGet("/tickets/{id}", (int id, SqlRepository repo) =>
+app.MapGet("/tickets/{employeeId}/{ticketId}", (int employeeId, int ticketId, SqlRepository repo) =>
 {
     repo.connectionString = connectionString;
-    var tickets = repo.GetPreviousTickets(id);
+    var ticket = repo.GetTicket(ticketId);
+    return ticket;
+});
+
+app.MapGet("/tickets/{employeeId}", (int employeeId, SqlRepository repo) =>
+{
+    repo.connectionString = connectionString;
+    var tickets = repo.GetPreviousTickets(employeeId);
     return tickets;
 });
 
@@ -96,13 +103,13 @@ app.MapPost("/tickets/{employeeId}", (int employeeId, Ticket newTicket, SqlRepos
 {
     repo.connectionString = connectionString;
     var ticket = repo.NewTicket(newTicket, employeeId);
-    return ticket;
+    return Results.Created($"/tickets/{employeeId}/{ticket.TicketNum}", ticket);
 });
 
-app.MapPut("/tickets/{id}", (int id, Ticket updatedTicket, SqlRepository repo) =>
+app.MapPut("/tickets/{employeeId}/{ticketId}", (int employeeId, int ticketId, Ticket updatedTicket, SqlRepository repo) =>
 {
     repo.connectionString = connectionString;
-    var ticket = repo.ManageTicket(id, (updatedTicket.Status == "Approved" ? 1 : 2));
+    var ticket = repo.ManageTicket(ticketId, (updatedTicket.Status == "Approved" ? 1 : 2));
     return ticket;
 });
 

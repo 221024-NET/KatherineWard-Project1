@@ -171,6 +171,36 @@ namespace Project1.Data
             //else return null;
         }
 
+        public Ticket GetTicket(int ticketNum)
+        {
+            Ticket ticket = new Ticket();
+
+            using SqlConnection connection = new SqlConnection(connectionString);
+            connection.Open();
+
+            string cmdText = "SELECT Amount, Description, EmployeeId, TicketNum, Name, ApprovedBy FROM Project1.Tickets " +
+                "JOIN Project1.Users ON EmployeeId = UserId " +
+                "WHERE TicketNum = @ticketNum";
+
+            using SqlCommand cmd = new(cmdText, connection);
+            cmd.Parameters.AddWithValue("@ticketNum", ticketNum);
+
+            using SqlDataReader reader = cmd.ExecuteReader();
+
+            while (reader.Read())
+            {
+                ticket.Amount = reader.GetDecimal(0);
+                ticket.Description = reader.GetString(1);
+                ticket.EmployeeId = reader.GetInt32(2);
+                ticket.TicketNum = reader.GetInt32(3);
+                ticket.Name = reader.GetString(4);
+                ticket.Status = reader.GetString(5);
+                return ticket;
+            }
+            connection.Close();
+            return null;
+        }
+
         public List<Ticket> GetOpenTickets()
         {
             List<Ticket> tickets = new List<Ticket>();
@@ -191,7 +221,7 @@ namespace Project1.Data
             {                   //Ticket(int ticketNum, int amount, string description, string name, string approvedBy, int employeeId)
                 tickets.Add(new Ticket(
                     reader.GetInt32(0),
-                    reader.GetInt32(1),
+                    reader.GetDecimal(1),
                     reader.GetString(2),
                     reader.GetString(3),
                     reader.GetString(4),
@@ -223,8 +253,9 @@ namespace Project1.Data
 
             while (reader.Read())
             {                   //Ticket(int ticketNum, int amount, string description, string name, string status, int employeeId)
-                tickets.Add(new Ticket(reader.GetInt32(0),
-                    reader.GetInt32(1),
+                tickets.Add(new Ticket(
+                    reader.GetInt32(0),
+                    reader.GetDecimal(1),
                     reader.GetString(2),
                     reader.GetString(3),
                     reader.GetString(4),
@@ -268,7 +299,7 @@ namespace Project1.Data
             while (reader.Read())
             {
                 Ticket currentTicket = new Ticket();
-                currentTicket.Amount = reader.GetInt32(0);
+                currentTicket.Amount = reader.GetDecimal(0);
                 currentTicket.Description = reader.GetString(1);
                 currentTicket.EmployeeId = reader.GetInt32(2);
                 currentTicket.TicketNum = reader.GetInt32(3);
@@ -308,7 +339,7 @@ namespace Project1.Data
 
             while (reader.Read())
             {
-                ticketStatus.Amount = reader.GetInt32(0);
+                ticketStatus.Amount = reader.GetDecimal(0);
                 ticketStatus.Description = reader.GetString(1);
                 ticketStatus.EmployeeId = reader.GetInt32(2);
                 ticketStatus.TicketNum = reader.GetInt32(3);

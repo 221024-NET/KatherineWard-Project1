@@ -9,7 +9,7 @@ namespace Project1.Logic
     public class Ticket
     {
         public int TicketNum { get; set; }
-        public int Amount { get; set; }
+        public decimal Amount { get; set; }
         public string Description { get; set; }
         public string Name { get; set; }
         public string Status { get; set; }
@@ -17,7 +17,7 @@ namespace Project1.Logic
 
         public Ticket() { }
 
-        public Ticket(int ticketNum, int amount, string description, string name, string status, int employeeId)
+        public Ticket(int ticketNum, decimal amount, string description, string name, string status, int employeeId)
         {
             TicketNum = ticketNum;
             Amount = amount;

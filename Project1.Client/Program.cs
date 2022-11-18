@@ -24,10 +24,10 @@ namespace Project1.Client
                 new MediaTypeWithQualityHeaderValue("application/json"));
             User user;
 
-#region Initial Login
+        #region [Console] Initial Login
 
             Console.WriteLine("*-------------* Welcome to the app! *-------------*");
-            Console.WriteLine("What would you like to do?\n[1] Login as Employee\n[2] Register as Employee\n[3] Register as Manager");
+            Console.WriteLine("What would you like to do?\n[1] Login\n[2] Register as Employee\n[3] Register as Manager");
             int option;
             while (true)
             {
@@ -60,9 +60,9 @@ namespace Project1.Client
             #endregion
 
             Console.Clear();
-            Console.WriteLine($"\n*-------------* Welcome {user.Name} *-------------*");
+            Console.WriteLine($"*-------------* Welcome {user.Name} *-------------*");
 
-#region Manager Ticket Menu
+        #region [Console] Manager Ticket Menu
 
             if (user.IsManager)
             {
@@ -87,11 +87,11 @@ namespace Project1.Client
                         Console.WriteLine($"\nOpen Tickets: {pendingTickets.Count}\n");
                         ListTickets(pendingTickets);
 
-                        Ticket ticket = await UpdateTicket();
+                        Ticket ticket = await UpdateTicket(pendingTickets);
 
                         StringBuilder sb = new StringBuilder();
                         sb.AppendLine($"Ticket Number | {ticket.TicketNum}");
-                        sb.AppendLine($"Submitted by  | {ticket.Name}");  ////// employee name
+                        sb.AppendLine($"Submitted by  | {ticket.Name}");  
                         sb.AppendLine($"Amount        | ${ticket.Amount}");
                         sb.AppendLine($"Description   | {ticket.Description}");
                         sb.AppendLine($"Status        | {ticket.Status}\n");
@@ -103,7 +103,8 @@ namespace Project1.Client
             }
             #endregion
 
-#region Employee Ticket Menu
+
+        #region [Console] Employee Ticket Menu
 
             else
             {
@@ -116,7 +117,19 @@ namespace Project1.Client
                     }
                     else if (option == 1)
                     {
-                        
+                        Ticket newTicket = await CreateTicket();
+                        newTicket.EmployeeId = user.EmployeeId;
+                        Ticket addedTicket = await AddNewTicket(newTicket);
+
+                        StringBuilder sb = new StringBuilder();
+                        sb.AppendLine($"Ticket Number | {addedTicket.TicketNum}");
+                        sb.AppendLine($"Submitted by  | {addedTicket.Name}");
+                        sb.AppendLine($"Amount        | ${addedTicket.Amount}");
+                        sb.AppendLine($"Description   | {addedTicket.Description}");
+                        sb.AppendLine($"Status        | {addedTicket.Status}\n");
+
+                        Console.WriteLine("Added Ticket:\n");
+                        Console.WriteLine(sb.ToString());
                     }
                     else if (option == 2)
                     {
@@ -128,8 +141,10 @@ namespace Project1.Client
                 }
             }
 #endregion
+
         }
 
+#region Logging In
         static async Task<User> GetUser(string username)
         {
             HttpResponseMessage response = await client.GetAsync($"user?username={username}");
@@ -144,94 +159,6 @@ namespace Project1.Client
             }
         }
 
-        static async Task<Ticket> GetTicket(int ticketNum)
-        {
-            HttpResponseMessage response = await client.GetAsync($"tickets/{ticketNum}");
-
-            if (response.IsSuccessStatusCode)
-            {
-                return await response.Content.ReadAsAsync<Ticket>();
-            }
-            else
-            {
-                return null;
-            }
-        }
-
-        static async Task<Uri> RegisterEmployee(User user)
-        {
-            HttpResponseMessage response = await client.PostAsJsonAsync(
-                $"registeremployee", user);
-            response.EnsureSuccessStatusCode();
-
-            return response.Headers.Location;
-        }
-
-        static async Task<Uri> RegisterManager(User user)
-        {
-            HttpResponseMessage response = await client.PostAsJsonAsync(
-                $"registermanager", user);
-            response.EnsureSuccessStatusCode();
-
-            return response.Headers.Location;
-        }
-
-        static async Task<List<Ticket>> ShowPendingTickets()
-        {
-            List<Ticket> pendingTickets = new List<Ticket>();
-            var path = "tickets";
-            HttpResponseMessage response = await client.GetAsync(path);
-
-            if (response.IsSuccessStatusCode)
-            {
-                pendingTickets = await response.Content.ReadAsAsync<List<Ticket>>();
-            }
-            return pendingTickets;
-        }
-
-        static async Task<List<Ticket>> ShowPreviousTickets(int id)
-        {
-            List<Ticket> previousTickets = new List<Ticket>();
-            var path = $"tickets/{id}";
-            HttpResponseMessage response = await client.GetAsync(path);
-
-            if (response.IsSuccessStatusCode)
-            {
-                previousTickets = await response.Content.ReadAsAsync<List<Ticket>>();
-            }
-            return previousTickets;
-        }
-
-        static async Task<Ticket> AddNewTicket(Ticket newTicket)
-        {
-            Ticket addedTicket = new Ticket();
-            HttpResponseMessage response = await client.PostAsJsonAsync(
-                $"tickets/{newTicket.EmployeeId}", newTicket);
-
-            if (response.IsSuccessStatusCode)
-            {
-                addedTicket = await response.Content.ReadAsAsync<Ticket>();
-            }
-
-            return addedTicket;
-        }
-
-        static async Task<Ticket> ManageTickets(Ticket updatedTicket)
-        {
-            HttpResponseMessage response = await client.PostAsJsonAsync(
-                $"tickets/{updatedTicket.TicketNum}", updatedTicket);
-
-            if (response.IsSuccessStatusCode)
-            {
-                updatedTicket = await response.Content.ReadAsAsync<Ticket>();
-            }
-
-            return updatedTicket;
-        }
-
-
-
-
         static async Task<User> ConsoleLogin()
         {
             User user;
@@ -242,7 +169,7 @@ namespace Project1.Client
 
                 user = await GetUser(username);
 
-                if (user == null)
+                if (user.EmployeeId == 0)
                 {
                     Console.WriteLine("Wrong username. Try again.");
                     continue;
@@ -266,7 +193,10 @@ namespace Project1.Client
             }
             return user;
         }
+        #endregion
 
+
+#region Registration
         static async Task<User> ConsoleRegister()
         {
             User user;
@@ -302,45 +232,51 @@ namespace Project1.Client
             return user;
         }
 
-        static async Task<Ticket> CreateTicket()
+        static async Task<Uri> RegisterEmployee(User user)
         {
-            Ticket ticket = new Ticket();
+            HttpResponseMessage response = await client.PostAsJsonAsync(
+                $"registeremployee", user);
+            response.EnsureSuccessStatusCode();
 
-            Console.WriteLine("Enter");
-
-            return ticket;
+            return response.Headers.Location;
         }
 
-        static async Task<Ticket> UpdateTicket()
+        static async Task<Uri> RegisterManager(User user)
         {
-            int ticketNum;
-            int statusCheck;
+            HttpResponseMessage response = await client.PostAsJsonAsync(
+                $"registermanager", user);
+            response.EnsureSuccessStatusCode();
 
-            Console.WriteLine("\nWhich ticket would you like to manage? (Enter ID):");
-            Int32.TryParse(Console.ReadLine(), out ticketNum);
-            Ticket ticketToUpdate = await GetTicket(ticketNum);
+            return response.Headers.Location;
+        }
+        #endregion
 
 
-            while (true)
+#region Showing Tickets
+        static async Task<List<Ticket>> ShowPendingTickets()
+        {
+            List<Ticket> pendingTickets = new List<Ticket>();
+            var path = "tickets";
+            HttpResponseMessage response = await client.GetAsync(path);
+
+            if (response.IsSuccessStatusCode)
             {
-                Console.WriteLine($"What would you like to do?\n[1] Approve\n[2] Deny");
-
-                if (Int32.TryParse(Console.ReadLine(), out statusCheck) || statusCheck < 1 || statusCheck > 2)
-                {
-                    Console.WriteLine("Please enter '1' or '2'.");
-                    continue;
-                }
-                else if (statusCheck == 1)
-                {
-                    ticketToUpdate.Status = "Approved";
-                }
-                else if (statusCheck == 2)
-                {
-                    ticketToUpdate.Status = "Denied";
-                }
+                pendingTickets = await response.Content.ReadAsAsync<List<Ticket>>();
             }
+            return pendingTickets;
+        }
 
-            ManageTickets(ticketToUpdate);
+        static async Task<List<Ticket>> ShowPreviousTickets(int employeeId)
+        {
+            List<Ticket> previousTickets = new List<Ticket>();
+            var path = $"tickets/{employeeId}";
+            HttpResponseMessage response = await client.GetAsync(path);
+
+            if (response.IsSuccessStatusCode)
+            {
+                previousTickets = await response.Content.ReadAsAsync<List<Ticket>>();
+            }
+            return previousTickets;
         }
 
         static void ListTickets(List<Ticket> ticketList)
@@ -354,5 +290,123 @@ namespace Project1.Client
                 Console.WriteLine($"Status        | {ticket.Status}\n");
             }
         }
+        #endregion
+
+
+#region Creating Tickets
+        static async Task<Ticket> CreateTicket()
+        {
+            Ticket newTicket = new Ticket();
+
+            while (true)
+            {
+                Console.WriteLine("Enter the amount to be reimbursed:");
+                decimal amount;
+                if(Decimal.TryParse(Console.ReadLine(), out amount))
+                {
+                    newTicket.Amount = amount;
+                }
+                else
+                {
+                    Console.WriteLine("Please enter as \"00.00\"");
+                    continue;
+                }
+                Console.WriteLine("\nEnter a description:");
+                newTicket.Description = Console.ReadLine();
+                break;
+            }
+            return newTicket;
+        }
+
+        static async Task<Ticket> AddNewTicket(Ticket newTicket)
+        {
+            Ticket addedTicket = new Ticket();
+            HttpResponseMessage response = await client.PostAsJsonAsync(
+                $"tickets/{newTicket.EmployeeId}", newTicket);
+
+            if (response.IsSuccessStatusCode)
+            {
+                addedTicket = await response.Content.ReadAsAsync<Ticket>();
+            }
+
+            return addedTicket;
+        }
+        #endregion
+
+
+#region Managing Tickets
+        static async Task<Ticket> UpdateTicket(List<Ticket> pendingTickets)
+        {
+            int ticketNum;
+            int employeeId = 0;
+            int statusCheck;
+
+            Console.WriteLine("\nWhich ticket would you like to manage? (Enter ID):");
+            Int32.TryParse(Console.ReadLine(), out ticketNum);
+
+            foreach(Ticket ticket in pendingTickets)
+            {
+                if (ticket.TicketNum == ticketNum)
+                {
+                    employeeId = ticket.EmployeeId;
+                    break;
+                }
+            }
+
+            Ticket ticketToUpdate = await GetTicket(employeeId, ticketNum);
+
+
+            while (true)
+            {
+                Console.WriteLine($"What would you like to do?\n[1] Approve\n[2] Deny");
+
+                if (!(Int32.TryParse(Console.ReadLine(), out statusCheck) || statusCheck < 1 || statusCheck > 2))
+                {
+                    Console.WriteLine("Please enter '1' or '2'.");
+                    continue;
+                }
+                else if (statusCheck == 1)
+                {
+                    ticketToUpdate.Status = "Approved";
+                    break;
+                }
+                else if (statusCheck == 2)
+                {
+                    ticketToUpdate.Status = "Denied";
+                    break;
+                }
+            }
+
+            return await ManageTickets(ticketToUpdate);
+        }
+
+        static async Task<Ticket> GetTicket(int employeeId, int ticketNum)
+        {
+            HttpResponseMessage response = await client.GetAsync($"tickets/{employeeId}/{ticketNum}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                return await response.Content.ReadAsAsync<Ticket>();
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        static async Task<Ticket> ManageTickets(Ticket updatedTicket)
+        {
+            HttpResponseMessage response = await client.PutAsJsonAsync(
+                $"tickets/{updatedTicket.EmployeeId}/{updatedTicket.TicketNum}", updatedTicket);
+
+            if (response.IsSuccessStatusCode)
+            {
+                updatedTicket = await response.Content.ReadAsAsync<Ticket>();
+            }
+
+            return updatedTicket;
+        }
+        #endregion
+
     }
 }
