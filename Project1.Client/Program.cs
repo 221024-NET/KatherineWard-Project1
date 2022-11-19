@@ -1,4 +1,6 @@
-﻿using Project1.Client;
+﻿using Microsoft.VisualBasic.FileIO;
+using Project1.Client;
+using System;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -10,6 +12,8 @@ namespace Project1.Client
     class Program
     {
         static HttpClient client = new HttpClient();
+        static User? user;
+        static bool running = true;
 
         static void Main()
         {
@@ -22,127 +26,171 @@ namespace Project1.Client
             client.DefaultRequestHeaders.Accept.Clear();
             client.DefaultRequestHeaders.Accept.Add(
                 new MediaTypeWithQualityHeaderValue("application/json"));
-            User user;
 
-        #region [Console] Initial Login
+            while (true)
+            {
+                user = null;
+                await MainMenu();
 
+                if (user != null)
+                {
+                    if (user.IsManager == true)
+                    {
+                        await ManagerMenu();
+                    }
+                    else
+                    {
+                        await EmployeeMenu();
+                    }
+                }
+                else
+                {
+                    break;
+                }
+            }
+            Environment.Exit(0);
+        }
+
+#region Menus
+        static async Task<Boolean> MainMenu()
+        {
+            Console.Clear();
             Console.WriteLine("*-------------* Welcome to the app! *-------------*");
-            Console.WriteLine("What would you like to do?\n[1] Login\n[2] Register as Employee\n[3] Register as Manager");
+            Console.WriteLine("What would you like to do?\n[1] Login\n[2] Register as Employee\n[3] Register as Manager\n[4] Exit Application");
             int option;
             while (true)
             {
-                if (!(Int32.TryParse(Console.ReadLine(), out option)) || option < 1 || option > 3)
+                if (!(Int32.TryParse(Console.ReadLine(), out option)) || option < 1 || option > 4)
                 {
-                    Console.WriteLine("Please enter '1', '2', or '3'");
+                    Console.WriteLine("Please enter 1, 2, 3, or 4");
+                    continue;
                 }
                 else if (option == 1)
                 {
                     user = await ConsoleLogin();
-                    Console.WriteLine($"Welcome {user.Name}");
                     option = 0;
                     break;
                 }
                 else if (option == 2)
                 {
-                    user = await ConsoleRegister();
-                    Console.WriteLine($"User created at {RegisterEmployee(user)}");
+                    User newUser = await ConsoleRegister();
+                    user = await RegisterEmployee(newUser);
                     option = 0;
                     break;
                 }
                 else if (option == 3)
                 {
-                    user = await ConsoleRegister();
-                    Console.WriteLine($"User created at {RegisterManager(user)}");
+                    User newUser = await ConsoleRegister();
+                    user = await RegisterManager(newUser);
                     option = 0;
                     break;
                 }
+                else if (option == 4)
+                {
+                    break;
+                }
             }
-            #endregion
+                return true;
+        }
+
+        static async Task<Boolean> ManagerMenu()
+        {
+            int option;
 
             Console.Clear();
             Console.WriteLine($"*-------------* Welcome {user.Name} *-------------*");
 
-        #region [Console] Manager Ticket Menu
-
-            if (user.IsManager)
+            while (true)
             {
-                while (true)
+                Console.WriteLine("What would you like to do?\n[1] View Pending Tickets\n[2] Manage Tickets\n[3] Log Out");
+                if (!(Int32.TryParse(Console.ReadLine(), out option)) || option < 1 || option > 3)
                 {
-                    Console.WriteLine("What would you like to do?\n[1] View Pending Tickets\n[2] Manage Tickets");
-                    if (!(Int32.TryParse(Console.ReadLine(), out option)) || option < 1 || option > 2)
-                    {
-                        Console.WriteLine("Please enter '1' or '2'");
-                    }
-                    else if (option == 1)
-                    {
-                        var pendingTickets = await ShowPendingTickets();
+                    Console.WriteLine("Please enter '1' or '2'");
+                }
+                else if (option == 1)
+                {
+                    var pendingTickets = await ShowPendingTickets();
 
-                        Console.WriteLine($"\nOpen Tickets: {pendingTickets.Count}\n");
-                        ListTickets(pendingTickets);
-                    }
-                    else if (option == 2)
-                    {
-                        var pendingTickets = await ShowPendingTickets();
+                    Console.WriteLine($"\nOpen Tickets: {pendingTickets.Count}\n");
+                    ListTickets(pendingTickets);
+                }
+                else if (option == 2)
+                {
+                    var pendingTickets = await ShowPendingTickets();
 
-                        Console.WriteLine($"\nOpen Tickets: {pendingTickets.Count}\n");
-                        ListTickets(pendingTickets);
+                    Console.WriteLine($"\nOpen Tickets: {pendingTickets.Count}\n");
+                    ListTickets(pendingTickets);
 
-                        Ticket ticket = await UpdateTicket(pendingTickets);
+                    Ticket ticket = await UpdateTicket(pendingTickets);
 
-                        StringBuilder sb = new StringBuilder();
-                        sb.AppendLine($"Ticket Number | {ticket.TicketNum}");
-                        sb.AppendLine($"Submitted by  | {ticket.Name}");  
-                        sb.AppendLine($"Amount        | ${ticket.Amount}");
-                        sb.AppendLine($"Description   | {ticket.Description}");
-                        sb.AppendLine($"Status        | {ticket.Status}\n");
+                    StringBuilder sb = new StringBuilder();
+                    sb.AppendLine($"Ticket Number | {ticket.TicketNum}");
+                    sb.AppendLine($"Submitted by  | {ticket.Name}");
+                    sb.AppendLine($"Amount        | ${ticket.Amount}");
+                    sb.AppendLine($"Description   | {ticket.Description}");
+                    sb.AppendLine($"Status        | {ticket.Status}\n");
 
-                        Console.WriteLine("Updated Ticket:\n");
-                        Console.WriteLine(sb.ToString());
-                    }
+                    Console.Clear();
+                    Console.WriteLine("Updated Ticket:\n");
+                    Console.WriteLine(sb.ToString());
+                }
+                else if (option == 3)
+                {
+                    break;
                 }
             }
-            #endregion
-
-
-        #region [Console] Employee Ticket Menu
-
-            else
-            {
-                while (true)
-                {
-                    Console.WriteLine("What would you like to do?\n[1] Submit Ticket\n[2] View Previous Tickets");
-                    if (!(Int32.TryParse(Console.ReadLine(), out option)) || option < 1 || option > 2)
-                    {
-                        Console.WriteLine("Please enter '1' or '2'");
-                    }
-                    else if (option == 1)
-                    {
-                        Ticket newTicket = await CreateTicket();
-                        newTicket.EmployeeId = user.EmployeeId;
-                        Ticket addedTicket = await AddNewTicket(newTicket);
-
-                        StringBuilder sb = new StringBuilder();
-                        sb.AppendLine($"Ticket Number | {addedTicket.TicketNum}");
-                        sb.AppendLine($"Submitted by  | {addedTicket.Name}");
-                        sb.AppendLine($"Amount        | ${addedTicket.Amount}");
-                        sb.AppendLine($"Description   | {addedTicket.Description}");
-                        sb.AppendLine($"Status        | {addedTicket.Status}\n");
-
-                        Console.WriteLine("Added Ticket:\n");
-                        Console.WriteLine(sb.ToString());
-                    }
-                    else if (option == 2)
-                    {
-                        var previousTickets = await ShowPreviousTickets(user.EmployeeId);
-
-                        Console.WriteLine($"\nYour Tickets: {previousTickets.Count}\n");
-                        ListTickets(previousTickets);
-                    }
-                }
-            }
-#endregion
-
+                return true;
         }
+
+        static async Task<Boolean> EmployeeMenu()
+        {
+            int option;
+
+            Console.Clear();
+            Console.WriteLine($"*-------------* Welcome {user.Name} *-------------*");
+
+            while (true)
+            {
+                Console.WriteLine("What would you like to do?\n[1] Submit Ticket\n[2] View Previous Tickets\n[3] Log Out");
+                if (!(Int32.TryParse(Console.ReadLine(), out option)) || option < 1 || option > 3)
+                {
+                    Console.WriteLine("Please enter 1, 2, or 3.");
+                    continue;
+                }
+                else if (option == 1)
+                {
+                    Ticket newTicket = await CreateTicket();
+                    newTicket.EmployeeId = user.EmployeeId;
+                    Ticket addedTicket = await AddNewTicket(newTicket);
+
+                    StringBuilder sb = new StringBuilder();
+                    sb.AppendLine($"Ticket Number | {addedTicket.TicketNum}");
+                    sb.AppendLine($"Submitted by  | {addedTicket.Name}");
+                    sb.AppendLine($"Amount        | ${addedTicket.Amount}");
+                    sb.AppendLine($"Description   | {addedTicket.Description}");
+                    sb.AppendLine($"Status        | {addedTicket.Status}\n");
+
+                    Console.Clear();
+                    Console.WriteLine("Added Ticket:\n");
+                    Console.WriteLine(sb.ToString());
+                }
+                else if (option == 2)
+                {
+                    var previousTickets = await ShowPreviousTickets(user.EmployeeId);
+
+                    Console.Clear();
+                    Console.WriteLine($"Your Tickets: {previousTickets.Count}\n");
+                    ListTickets(previousTickets);
+                }
+                else if (option == 3)
+                {
+                    break;
+                }
+            }
+                return true;
+        }
+        #endregion
+
 
 #region Logging In
         static async Task<User> GetUser(string username)
@@ -161,15 +209,15 @@ namespace Project1.Client
 
         static async Task<User> ConsoleLogin()
         {
-            User user;
+            User newUser = new User();
             while (true)
             {
                 Console.WriteLine("Enter your username:");
                 string username = Console.ReadLine();
 
-                user = await GetUser(username);
+                newUser = await GetUser(username);
 
-                if (user.EmployeeId == 0)
+                if (newUser.Username != username)
                 {
                     Console.WriteLine("Wrong username. Try again.");
                     continue;
@@ -179,7 +227,7 @@ namespace Project1.Client
                     Console.WriteLine("Enter your password:");
                     string password = Console.ReadLine();
 
-                    if (user.Password != password)
+                    if (newUser.Password != password)
                     {
                         Console.WriteLine("Wrong password. Try again.");
                         continue;
@@ -191,7 +239,7 @@ namespace Project1.Client
                     }
                 }
             }
-            return user;
+            return newUser;
         }
         #endregion
 
@@ -199,7 +247,7 @@ namespace Project1.Client
 #region Registration
         static async Task<User> ConsoleRegister()
         {
-            User user;
+            User newUser;
             string username;
             string password;
             string name;
@@ -209,17 +257,17 @@ namespace Project1.Client
                 Console.WriteLine("Enter a username:");
                 username = Console.ReadLine();
 
-                user = await GetUser(username);
+                newUser = await GetUser(username);
 
-                if (user.Username == null)
+                if (newUser.Username == null)
                 {
                     Console.WriteLine("Enter a password:");
                     password = Console.ReadLine();
                     Console.WriteLine("Enter your full name:");
                     name = Console.ReadLine();
-                    user.Username = username;
-                    user.Password = password;
-                    user.Name = name;
+                    newUser.Username = username;
+                    newUser.Password = password;
+                    newUser.Name = name;
                     break;
                 }
                 else
@@ -229,25 +277,25 @@ namespace Project1.Client
                 }
             }
 
-            return user;
+            return newUser;
         }
 
-        static async Task<Uri> RegisterEmployee(User user)
+        static async Task<User> RegisterEmployee(User user)
         {
             HttpResponseMessage response = await client.PostAsJsonAsync(
                 $"registeremployee", user);
             response.EnsureSuccessStatusCode();
 
-            return response.Headers.Location;
+            return await response.Content.ReadAsAsync<User>();
         }
 
-        static async Task<Uri> RegisterManager(User user)
+        static async Task<User> RegisterManager(User user)
         {
             HttpResponseMessage response = await client.PostAsJsonAsync(
                 $"registermanager", user);
             response.EnsureSuccessStatusCode();
 
-            return response.Headers.Location;
+            return await response.Content.ReadAsAsync<User>();
         }
         #endregion
 
@@ -300,7 +348,7 @@ namespace Project1.Client
 
             while (true)
             {
-                Console.WriteLine("Enter the amount to be reimbursed:");
+                Console.WriteLine("\nEnter the amount to be reimbursed:");
                 decimal amount;
                 if(Decimal.TryParse(Console.ReadLine(), out amount))
                 {
@@ -308,7 +356,7 @@ namespace Project1.Client
                 }
                 else
                 {
-                    Console.WriteLine("Please enter as \"00.00\"");
+                    Console.WriteLine("Please enter in decimal format (00.00).");
                     continue;
                 }
                 Console.WriteLine("\nEnter a description:");
@@ -340,15 +388,21 @@ namespace Project1.Client
             int ticketNum;
             int employeeId = 0;
             int statusCheck;
+            Ticket tempTicket;
 
             Console.WriteLine("\nWhich ticket would you like to manage? (Enter ID):");
-            Int32.TryParse(Console.ReadLine(), out ticketNum);
 
-            foreach(Ticket ticket in pendingTickets)
+            while (true)
             {
-                if (ticket.TicketNum == ticketNum)
+                if (!(Int32.TryParse(Console.ReadLine(), out ticketNum)) || !(pendingTickets.Exists(x => x.TicketNum == ticketNum)))
                 {
-                    employeeId = ticket.EmployeeId;
+                    Console.WriteLine("Please enter a valid ticket id number.");
+                    continue;
+                }
+                else
+                {
+                    tempTicket = pendingTickets.Find(x => x.TicketNum == ticketNum);
+                    employeeId = tempTicket.EmployeeId;
                     break;
                 }
             }
@@ -358,11 +412,11 @@ namespace Project1.Client
 
             while (true)
             {
-                Console.WriteLine($"What would you like to do?\n[1] Approve\n[2] Deny");
+                Console.WriteLine($"What would you like to do?\n[1] Approve\n[2] Deny\n");
 
-                if (!(Int32.TryParse(Console.ReadLine(), out statusCheck) || statusCheck < 1 || statusCheck > 2))
+                if (!(Int32.TryParse(Console.ReadLine(), out statusCheck)) || statusCheck < 1 || statusCheck > 2)
                 {
-                    Console.WriteLine("Please enter '1' or '2'.");
+                    Console.WriteLine("Please enter 1 or 2.");
                     continue;
                 }
                 else if (statusCheck == 1)
@@ -376,8 +430,7 @@ namespace Project1.Client
                     break;
                 }
             }
-
-            return await ManageTickets(ticketToUpdate);
+                    return await ManageTickets(ticketToUpdate);
         }
 
         static async Task<Ticket> GetTicket(int employeeId, int ticketNum)
