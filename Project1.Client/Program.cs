@@ -13,7 +13,6 @@ namespace Project1.Client
     {
         static HttpClient client = new HttpClient();
         static User? user;
-        static bool running = true;
 
         static void Main()
         {
@@ -80,10 +79,20 @@ namespace Project1.Client
                 }
                 else if (option == 3)
                 {
-                    User newUser = await ConsoleRegister();
-                    user = await RegisterManager(newUser);
-                    option = 0;
-                    break;
+                    Console.WriteLine("Please enter password:");
+                    if (Console.ReadLine().Equals("Please"))
+                    {
+                        User newUser = await ConsoleRegister();
+                        user = await RegisterManager(newUser);
+                        option = 0;
+                        break;
+                    }
+                    else
+                    {
+                        Console.WriteLine("Wrong password. Returning to menu.\n");
+                        Console.WriteLine("What would you like to do?\n[1] Login\n[2] Register as Employee\n[3] Register as Manager\n[4] Exit Application");
+                        continue;
+                    }
                 }
                 else if (option == 4)
                 {
