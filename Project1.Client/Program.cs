@@ -29,7 +29,7 @@ namespace Project1.Client
             while (true)
             {
                 user = null;
-                await MainMenu();
+                bool toMain = await MainMenu();
 
                 if (user != null)
                 {
@@ -44,13 +44,14 @@ namespace Project1.Client
                 }
                 else
                 {
-                    break;
+                    if (toMain) continue;
+                    else break;
                 }
             }
             Environment.Exit(0);
         }
 
-#region Menus
+        #region Menus
         static async Task<Boolean> MainMenu()
         {
             Console.Clear();
@@ -73,6 +74,7 @@ namespace Project1.Client
                 else if (option == 2)
                 {
                     User newUser = await ConsoleRegister();
+                    if (newUser == null) return true;
                     user = await RegisterEmployee(newUser);
                     option = 0;
                     break;
@@ -83,6 +85,7 @@ namespace Project1.Client
                     if (Console.ReadLine().Equals("Please"))
                     {
                         User newUser = await ConsoleRegister();
+                        if (newUser == null) return true;
                         user = await RegisterManager(newUser);
                         option = 0;
                         break;
@@ -96,10 +99,10 @@ namespace Project1.Client
                 }
                 else if (option == 4)
                 {
-                    break;
+                    return false;
                 }
             }
-                return true;
+            return true;
         }
 
         static async Task<Boolean> ManagerMenu()
@@ -132,6 +135,8 @@ namespace Project1.Client
 
                     Ticket ticket = await UpdateTicket(pendingTickets);
 
+                    if (ticket == null) continue;
+
                     StringBuilder sb = new StringBuilder();
                     sb.AppendLine($"Ticket Number | {ticket.TicketNum}");
                     sb.AppendLine($"Submitted by  | {ticket.Name}");
@@ -148,7 +153,7 @@ namespace Project1.Client
                     break;
                 }
             }
-                return true;
+            return true;
         }
 
         static async Task<Boolean> EmployeeMenu()
@@ -169,6 +174,8 @@ namespace Project1.Client
                 else if (option == 1)
                 {
                     Ticket newTicket = await CreateTicket();
+                    if (newTicket == null) continue;
+
                     newTicket.EmployeeId = user.EmployeeId;
                     Ticket addedTicket = await AddNewTicket(newTicket);
 
@@ -196,12 +203,12 @@ namespace Project1.Client
                     break;
                 }
             }
-                return true;
+            return true;
         }
         #endregion
 
 
-#region Logging In
+        #region Logging In
         static async Task<User> GetUser(string username)
         {
             HttpResponseMessage response = await client.GetAsync($"user?username={username}");
@@ -253,7 +260,7 @@ namespace Project1.Client
         #endregion
 
 
-#region Registration
+        #region Registration
         static async Task<User> ConsoleRegister()
         {
             User newUser;
@@ -263,17 +270,26 @@ namespace Project1.Client
 
             while (true)
             {
-                Console.WriteLine("Enter a username:");
+                Console.WriteLine("Enter a username or [x] to exit");
                 username = Console.ReadLine();
+                username = username.Trim();
+
+                if (username.ToLower() == "x") return null;
 
                 newUser = await GetUser(username);
 
                 if (newUser.Username == null)
                 {
-                    Console.WriteLine("Enter a password:");
+                    Console.WriteLine("Enter a password or [x] to exit");
                     password = Console.ReadLine();
-                    Console.WriteLine("Enter your full name:");
+
+                    if (password.ToLower() == "x") return null;
+
+                    Console.WriteLine("Enter your full name or [x] to exit");
                     name = Console.ReadLine();
+
+                    if (name.ToLower() == "x") return null;
+
                     newUser.Username = username;
                     newUser.Password = password;
                     newUser.Name = name;
@@ -309,7 +325,7 @@ namespace Project1.Client
         #endregion
 
 
-#region Showing Tickets
+        #region Showing Tickets
         static async Task<List<Ticket>> ShowPendingTickets()
         {
             List<Ticket> pendingTickets = new List<Ticket>();
@@ -350,27 +366,58 @@ namespace Project1.Client
         #endregion
 
 
-#region Creating Tickets
+        #region Creating Tickets
         static async Task<Ticket> CreateTicket()
         {
             Ticket newTicket = new Ticket();
 
             while (true)
             {
-                Console.WriteLine("\nEnter the amount to be reimbursed:");
+                Console.WriteLine("\nEnter the amount to be reimbursed or [x] to exit");
                 decimal amount;
-                if(Decimal.TryParse(Console.ReadLine(), out amount))
+                string input = Console.ReadLine();
+                input = input.Trim();
+                if (Decimal.TryParse(input, out amount))
                 {
                     newTicket.Amount = amount;
                 }
                 else
                 {
-                    Console.WriteLine("Please enter in decimal format (00.00).");
-                    continue;
+                    if (input.ToLower() == "x")
+                    {
+                        newTicket = null;
+                        break;
+                    }
+                    else
+                    {
+                        Console.WriteLine("Please enter in decimal format (00.00).");
+                        continue;
+                    }
                 }
-                Console.WriteLine("\nEnter a description:");
-                newTicket.Description = Console.ReadLine();
-                break;
+
+                while (true)
+                {
+                    Console.WriteLine("\nEnter a description or [x] to go back");
+                    string description = Console.ReadLine();
+                    description = description.Trim();
+
+                    if (description == "")
+                    {
+                        Console.WriteLine("Please enter a description.");
+                        continue;
+                    }
+                    else if (description.ToLower() == "x")
+                    {
+                        newTicket = null;
+                        break;
+                    }
+                    else
+                    {
+                        newTicket.Description = description;
+                        break;
+                    }
+                }
+
             }
             return newTicket;
         }
@@ -391,7 +438,7 @@ namespace Project1.Client
         #endregion
 
 
-#region Managing Tickets
+        #region Managing Tickets
         static async Task<Ticket> UpdateTicket(List<Ticket> pendingTickets)
         {
             int ticketNum;
@@ -399,11 +446,16 @@ namespace Project1.Client
             int statusCheck;
             Ticket tempTicket;
 
-            Console.WriteLine("\nWhich ticket would you like to manage? (Enter ID):");
+            Console.WriteLine("\nWhich ticket would you like to manage? Enter ticket ID or [x] to exit");
 
             while (true)
             {
-                if (!(Int32.TryParse(Console.ReadLine(), out ticketNum)) || !(pendingTickets.Exists(x => x.TicketNum == ticketNum)))
+                string input = Console.ReadLine();
+                input = input.Trim();
+
+                if (input.ToLower() == "x") return null;
+
+                else if (!(Int32.TryParse(input, out ticketNum)) || !(pendingTickets.Exists(x => x.TicketNum == ticketNum)))
                 {
                     Console.WriteLine("Please enter a valid ticket id number.");
                     continue;
@@ -421,12 +473,18 @@ namespace Project1.Client
 
             while (true)
             {
-                Console.WriteLine($"What would you like to do?\n[1] Approve\n[2] Deny\n");
+                Console.WriteLine($"What would you like to do?\n[1] Approve\n[2] Deny\n[x] Exit");
+                string input = Console.ReadLine();
+                input = input.Trim();
 
-                if (!(Int32.TryParse(Console.ReadLine(), out statusCheck)) || statusCheck < 1 || statusCheck > 2)
+                if (!(Int32.TryParse(input, out statusCheck)) || statusCheck < 1 || statusCheck > 2)
                 {
-                    Console.WriteLine("Please enter 1 or 2.");
-                    continue;
+                    if (input.ToLower() == "x") return null;
+                    else
+                    {
+                        Console.WriteLine("Please enter 1 or 2.");
+                        continue;
+                    }
                 }
                 else if (statusCheck == 1)
                 {
@@ -439,7 +497,7 @@ namespace Project1.Client
                     break;
                 }
             }
-                    return await ManageTickets(ticketToUpdate);
+            return await ManageTickets(ticketToUpdate);
         }
 
         static async Task<Ticket> GetTicket(int employeeId, int ticketNum)

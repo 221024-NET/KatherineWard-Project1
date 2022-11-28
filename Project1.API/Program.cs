@@ -10,6 +10,9 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 
+//builder.WebHost.ConfigureKestrel(options => options.Listen(7158));
+
+
 // initialize the connection string value
 string connectionString = File.ReadAllText(@"/Revature/221024/Project1/ConnectionStrings/Project1ConnectionString.txt");
 //IRepository repo = new SqlRepository(connectionString);
